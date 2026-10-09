@@ -135,7 +135,8 @@ export function AdminDresses() {
 
       <div className="space-y-2">
         {list.map((d) => (
-          <div key={d.id} className="bg-white border border-champagne rounded-2xl p-4 flex flex-wrap items-center gap-3">
+          <div key={d.id} className="bg-white border border-champagne rounded-2xl">
+            <div className="p-4 flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-[180px]">
               <p className="font-medium">{locale === 'ar' ? d.name_ar : d.name_en} <span className="text-xs text-stone-soft" dir="ltr">{d.code}</span>{d.demoSample && <span className="ms-2 text-[10px] bg-gold-deep text-white px-2 py-0.5 rounded-full">{t(locale, 'demo_sample')}</span>}</p>
               <p className="text-xs text-stone-soft">{d.sale_enabled ? formatMoney(d.sale_price_minor, 'EGP', locale) : '—'} · {d.rental_enabled ? formatMoney(d.rental_price_minor, 'EGP', locale) : '—'} · {(d.images?.length ?? 0)} imgs · {d.is_active ? (locale === 'ar' ? 'نشط' : 'active') : (locale === 'ar' ? 'مؤرشف' : 'archived')}</p>
@@ -145,8 +146,28 @@ export function AdminDresses() {
               <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(d.id, f); }} />
             </label>
             <button onClick={() => void toggleActive(d)} className="text-xs border border-champagne rounded-full px-3 py-1.5">{d.is_active ? (locale === 'ar' ? 'أرشفة' : 'Archive') : (locale === 'ar' ? 'تفعيل' : 'Activate')}</button>
+            {isDemoMode() && (
+              <button onClick={() => { if (confirm(t(locale, 'delete_confirm'))) { demoStore.deleteDress(d.id); void load(); } }} className="text-xs border border-red-200 text-red-700 rounded-full px-3 py-1.5">✕</button>
+            )}
           </div>
-        ))}
+          {isDemoMode() && (d.units ?? []).length > 0 && (
+            <div className="px-4 pb-3 flex gap-2 flex-wrap text-[11px]">
+              <span className="text-stone-soft py-1">{t(locale, 'units')}:</span>
+              {(d.units ?? []).map((u) => (
+                <button key={u.id} title={`${u.code} · ${u.size_label}`}
+                  onClick={() => {
+                    const next = u.status === 'available' ? 'cleaning' : u.status === 'cleaning' ? 'maintenance' : 'available';
+                    demoStore.updateUnit(d.id, u.id, { status: next as typeof u.status });
+                    void load();
+                  }}
+                  className={`rounded-full px-2.5 py-1 border ${u.status === 'available' ? 'bg-green-50 border-green-300 text-green-900' : u.status === 'cleaning' ? 'bg-champagne/60 border-gold/50' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                  <span dir="ltr">{u.code}</span> · {u.status}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+          ))}
         {list.length === 0 && <p className="text-sm text-stone-soft">{locale === 'ar' ? 'لا توجد بيانات بعد — اربطي Supabase وأضيفي أول فستان.' : 'No data yet — connect Supabase and add your first dress.'}</p>}
       </div>
       <p className="text-xs text-stone-soft mt-3">watch: {JSON.stringify(watch('code') ?? '')}</p>

@@ -38,12 +38,12 @@ Apply to **Production** (and Preview if you want demo previews). Redeploy after 
 
 ## 4. Verify the demo deployment
 
-1. Gold **“DEMO VERSION — نسخة تجريبية”** banner visible on every page (AR + EN).
-2. Catalog cards carry a **SAMPLE / عينة تجريبية** badge.
-3. Submit a checkout and a rental request → references look like `DEMO-AG-S-…` with an explicit “nothing was booked / no payment taken” note.
+1. Gold **“DEMO VERSION — نسخة تجريبية”** banner visible on every page (AR + EN), with a one-click **demo reset** that restores the sample dataset.
+2. Catalog cards carry a **SAMPLE / عينة تجريبية** badge; filters (category, sale/rental, price, size, color, style), sorting, and counts all work on the in-memory dataset.
+3. Submit a checkout (try promo code `DEMO10`) and a multi-step rental request (calendar, slots, conflict check) → references look like `DEMO-ORD-0001` / `DEMO-BOOK-0001` with an explicit “nothing was booked / no payment taken” note.
 4. WhatsApp buttons open an in-app **message preview**, not `wa.me`.
-5. `/admin/login` shows **“Enter demo dashboard”** → dashboard metrics, sample bookings/orders/dresses editable locally; refresh keeps them local, nothing leaves the browser.
-6. Direct-open (paste URL, then refresh): `/`, `/catalog?category=wedding`, `/dress/AG-W-001`, `/admin`, `/admin/bookings` — all must render (proves the SPA rewrite works).
+5. `/admin/login` shows **“Enter demo dashboard”** → metrics with charts, sample bookings/orders/dresses/units/promos/reports (CSV export) editable locally; refresh keeps them local, nothing leaves the browser.
+6. Direct-open (paste URL, then refresh): `/`, `/catalog?category=wedding`, `/dress/AG-W-001`, `/favorites`, `/faq`, `/admin`, `/admin/bookings`, `/admin/reports`, plus a friendly 404 for bad URLs — all must render (proves the SPA rewrite works).
 7. Switch AR ⇄ EN — layout flips RTL ⇄ LTR everywhere including the demo banner and preview modal.
 
 ## 5. Disable demo for the real production release

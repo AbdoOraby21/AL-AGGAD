@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Heart, MessageCircle, ShoppingBag } from 'lucide-react';
 import { useLang } from '../app/LanguageContext';
 import { dressName, t } from '../lib/i18n';
@@ -10,21 +7,9 @@ import { formatMoney } from '../lib/money';
 import { useDresses, primaryImage } from '../app/useDresses';
 import { useCart } from '../app/CartContext';
 import { useToast } from '../app/ToastContext';
-import { submitRentalBooking } from '../lib/transactions';
-import { isDemoMode } from '../lib/demo';
+import { RentalFlow } from '../components/RentalFlow';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 import { DressCard } from '../components/DressCard';
-
-const bookingSchema = z.object({
-  name: z.string().min(2),
-  phone: z.string().min(8),
-  occasion_date: z.string().optional(),
-  start_date: z.string().min(1, 'required'),
-  end_date: z.string().min(1, 'required'),
-  size: z.string().optional(),
-  color: z.string().optional(),
-});
-type BookingForm = z.infer<typeof bookingSchema>;
 
 export function DressDetails() {
   const { code } = useParams();
@@ -37,10 +22,6 @@ export function DressDetails() {
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [fav, setFav] = useState(false);
-  const [bookingRef, setBookingRef] = useState<string | null>(null);
-  const [wasDemo, setWasDemo] = useState(false);
-
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<BookingForm>({ resolver: zodResolver(bookingSchema) });
 
   if (!dress) return <main className="max-w-4xl mx-auto px-4 py-16 text-center text-stone-soft">{t(locale, 'loading')}</main>;
 
@@ -60,33 +41,6 @@ export function DressDetails() {
     if (!dress.sale_enabled) { push('error', t(locale, 'unavailable')); return; }
     add({ dressId: dress.id, code: dress.code, nameAr: dress.name_ar, nameEn: dress.name_en, image: primaryImage(dress), size: size || undefined, color: color || undefined, priceMinor: dress.sale_price_minor ?? 0, qty: 1 });
     push('success', locale === 'ar' ? 'تمت الإضافة إلى السلة' : 'Added to bag');
-  };
-
-  const onBooking = async (f: BookingForm) => {
-    if (!dress.rental_enabled) { push('error', t(locale, 'unavailable')); return; }
-    if (f.start_date > f.end_date) { push('error', locale === 'ar' ? 'تاريخ الإرجاع يجب أن يكون بعد الاستلام' : 'Return must be after pickup'); return; }
-    try {
-      const { reference, demo } = await submitRentalBooking({
-        dressId: dress.id,
-        dressCode: dress.code,
-        name: f.name,
-        phone: f.phone,
-        occasionDate: f.occasion_date,
-        startDate: f.start_date,
-        endDate: f.end_date,
-        size: f.size || size || undefined,
-        color: f.color || color || undefined,
-        rentalFeeMinor: dress.rental_price_minor ?? 0,
-        bookingDepositMinor: dress.booking_deposit_minor ?? 0,
-        securityDepositMinor: dress.deposit_minor ?? 0,
-        currency: 'EGP',
-      });
-      setBookingRef(reference);
-      setWasDemo(demo);
-      push('success', `${t(locale, 'booking_success')} ${reference}`);
-    } catch (e) {
-      push('error', e instanceof Error ? e.message : t(locale, 'error_generic'));
-    }
   };
 
   const related = dresses.filter((d) => d.id !== dress.id && d.category_slug === dress.category_slug).slice(0, 4);
@@ -165,36 +119,7 @@ export function DressDetails() {
             </WhatsAppButton>
           </div>
 
-          {dress.rental_enabled && (
-            <form onSubmit={handleSubmit(onBooking)} className="mt-6 bg-white border border-champagne rounded-3xl p-6 space-y-3">
-              <h2 className="font-heading text-2xl">{t(locale, 'rent_this')}</h2>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <label className="text-sm">{t(locale, 'name')}<input {...register('name')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" />{errors.name && <span className="text-red-700 text-xs">!</span>}</label>
-                <label className="text-sm" dir="ltr">{t(locale, 'phone')}<input {...register('phone')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" /></label>
-                <label className="text-sm">{t(locale, 'occasion_date')}<input type="date" {...register('occasion_date')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" /></label>
-                <span />
-                <label className="text-sm">{t(locale, 'start_date')}<input type="date" {...register('start_date')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" />{errors.start_date && <span className="text-red-700 text-xs">!</span>}</label>
-                <label className="text-sm">{t(locale, 'end_date')}<input type="date" {...register('end_date')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" />{errors.end_date && <span className="text-red-700 text-xs">!</span>}</label>
-              </div>
-              <button disabled={isSubmitting} className="btn-lux w-full bg-gold text-white rounded-full py-3 hover:bg-gold-deep disabled:opacity-50">
-                {isSubmitting ? t(locale, 'loading') : t(locale, 'submit_booking')}
-              </button>
-              {bookingRef && (
-                <div className="text-sm bg-ivory border border-champagne rounded-xl p-3 space-y-2">
-                  <p>{t(locale, 'booking_success')} <strong dir="ltr">{bookingRef}</strong></p>
-                  {(wasDemo || isDemoMode()) && (
-                    <p className="text-xs bg-gold/15 border border-gold/40 rounded-lg p-2">{t(locale, 'demo_booking_note')}</p>
-                  )}
-                  <WhatsAppButton
-                    payload={{ to: WA, productName: dressName(dress, locale), productCode: dress.code, intent: 'rental', size: size || undefined, color: color || undefined, bookingRef, lang: locale }}
-                  >
-                    <span className="underline">{locale === 'ar' ? 'تأكيد عبر واتساب' : 'Confirm via WhatsApp'}</span>
-                  </WhatsAppButton>
-                </div>
-              )}
-              <p className="text-xs text-stone-soft">{locale === 'ar' ? 'إرسال الطلب لا يعني التأكيد — تراجع الإدارة التوفر وتؤكد الحجز.' : 'Submitting is not confirmation — our team verifies availability and confirms.'}</p>
-            </form>
-          )}
+          {dress.rental_enabled && <RentalFlow dress={dress} />}
         </div>
       </div>
 

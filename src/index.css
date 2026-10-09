@@ -43,3 +43,9 @@ body { background: var(--color-ivory); color: var(--color-cocoa); font-family: v
 .fade-up { animation: fadeUp .7s ease both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: none; } }
 :focus-visible { outline: 2px solid #b99a5b; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .card-lux:hover { transform: none; }
+  .img-zoom:hover img { transform: none; }
+}

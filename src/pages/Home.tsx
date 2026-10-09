@@ -1,13 +1,22 @@
 import { Link } from 'react-router-dom';
-import { CalendarCheck, MessageCircle, Ruler, Sparkles } from 'lucide-react';
+import { CalendarCheck, MessageCircle, Quote, Ruler, Sparkles } from 'lucide-react';
 import { useLang } from '../app/LanguageContext';
 import { t } from '../lib/i18n';
 import { useDresses } from '../app/useDresses';
 import { DressCard, SectionTitle, SkeletonGrid, Empty } from '../components/DressCard';
 import { Logo } from '../components/Logo';
 import { WhatsAppButton } from '../components/WhatsAppButton';
+import { isDemoMode } from '../lib/demo';
+import { usePageMeta } from '../lib/meta';
 
 const HERO = 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?w=1800&q=80';
+
+/** Fictional testimonials — rendered in demo mode only, explicitly labeled. */
+const TESTIMONIALS = [
+  { ar: 'تجربة راقية من أول قياس حتى يوم الزفاف. الفستان كان تحفة!', en: 'Such an elegant experience from first fitting to the wedding day.', name_ar: 'عروسة تجريبية — سارة', name_en: 'Demo bride — Sara' },
+  { ar: 'حجز التأجير كان سهلاً وواضحاً، والفستان وصل في الموعد.', en: 'The rental booking was easy and clear, and the dress arrived on time.', name_ar: 'عميلة تجريبية — مريم', name_en: 'Demo client — Mariam' },
+  { ar: 'اختيارات كثيرة وأسعار واضحة. أنصح أي عروس تجرب التشكيلة.', en: 'Lovely variety and transparent pricing. Highly recommended.', name_ar: 'عروسة تجريبية — نور', name_en: 'Demo bride — Nour' },
+];
 
 export function Home() {
   const { locale } = useLang();
@@ -15,6 +24,8 @@ export function Home() {
   const featured = dresses.filter((d) => d.is_featured).slice(0, 4);
   const fresh = dresses.filter((d) => d.is_new).slice(0, 4);
   const WA = import.meta.env.VITE_WHATSAPP_NUMBER ?? '201000000000';
+  const demo = isDemoMode();
+  usePageMeta(t(locale, 'home'), locale === 'ar' ? 'العقاد — فساتين زفاف وخطوبة للبيع والتأجير' : 'AL AGGAD — wedding & engagement dresses for sale and rental');
 
   return (
     <main>
@@ -72,6 +83,43 @@ export function Home() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Testimonials (fictional demo content, labeled) */}
+        {demo && (
+          <section className="pt-14">
+            <SectionTitle title={t(locale, 'testimonials_title')} sub={t(locale, 'demo_sample')} />
+            <div className="grid md:grid-cols-3 gap-4">
+              {TESTIMONIALS.map((x, i) => (
+                <figure key={i} className="bg-white border border-champagne rounded-2xl p-5">
+                  <Quote size={18} className="text-gold" aria-hidden="true" />
+                  <blockquote className="mt-2 text-sm leading-7">{locale === 'ar' ? x.ar : x.en}</blockquote>
+                  <figcaption className="mt-3 text-xs text-stone-soft flex items-center gap-2">
+                    {locale === 'ar' ? x.name_ar : x.name_en}
+                    <span className="text-[10px] bg-gold-deep text-white px-2 py-0.5 rounded-full">{t(locale, 'demo_sample')}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* FAQ preview */}
+        <section className="pt-14">
+          <SectionTitle title={t(locale, 'faq_title')} />
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
+            {[
+              [locale === 'ar' ? 'هل التأجير يشمل التنظيف؟' : 'Does rental include cleaning?', locale === 'ar' ? 'نعم — التنظيف الاحترافي والفحص بعد كل إرجاع.' : 'Yes — professional cleaning & inspection after every return.'],
+              [locale === 'ar' ? 'هل رسالة الواتساب حجز مؤكد؟' : 'Is a WhatsApp message a confirmed booking?', locale === 'ar' ? 'لا — التأكيد بعد مراجعة التوفر فقط.' : 'No — confirmed only after an availability check.'],
+              [locale === 'ar' ? 'ما هو التأمين المسترد؟' : 'What is the refundable deposit?', locale === 'ar' ? 'يُسترد بعد الفحص والإرجاع السليم.' : 'Refunded after clean inspection and return.'],
+            ].map(([q, a], i) => (
+              <div key={i} className="bg-white border border-champagne rounded-2xl p-5">
+                <p className="font-medium">{q}</p>
+                <p className="text-stone-soft mt-1">{a}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-center mt-4"><Link to="/faq" className="underline text-sm">{t(locale, 'faq_title')} ←</Link></p>
         </section>
 
         {/* Boutique intro + WhatsApp */}

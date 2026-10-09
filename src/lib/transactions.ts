@@ -33,6 +33,7 @@ export interface BookingInput {
   occasionDate?: string;
   startDate: string;
   endDate: string;
+  slot?: string;
   size?: string;
   color?: string;
   rentalFeeMinor: number;
@@ -71,6 +72,7 @@ export function submitDemoBooking(input: BookingInput): string {
     occasion_date: input.occasionDate ?? null,
     start_date: input.startDate,
     end_date: input.endDate,
+    slot: input.slot ?? undefined,
     size_label: input.size ?? null,
     color_label: input.color ?? null,
     rental_fee_minor: input.rentalFeeMinor,

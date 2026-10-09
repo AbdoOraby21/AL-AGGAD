@@ -8,8 +8,9 @@
  * This module NEVER imports Supabase. Demo admin edits and submissions
  * go through `demoStore` / `submitDemo*` only.
  */
-import type { Dress } from './types';
+import type { BookingStatus, Dress, DressUnit } from './types';
 import { DEMO_DRESSES } from '../app/useDresses';
+import { rangesOverlap } from './availability';
 
 /** Explicit env flag (Vite convention). Missing flag => safe fallback OFF. */
 let override: boolean | null = null;
@@ -33,9 +34,17 @@ export function resolveAdminAccess(opts: { demo: boolean; offline: boolean; hasS
   return opts.hasSession ? 'granted' : 'denied';
 }
 
-/** Clearly fake references — never collide with real AG-S / AG-R series. */
+/** Sequential, clearly mock references: DEMO-ORD-0001 / DEMO-BOOK-0001. */
+function nextSeq(key: string): number {
+  const full = `aggad-demo:${key}`;
+  const raw = sGet(full);
+  const n = raw ? parseInt(raw, 10) + 1 : 1;
+  sSet(full, String(n));
+  return n;
+}
 export function makeDemoRef(kind: 'S' | 'R'): string {
-  return `DEMO-AG-${kind}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const n = nextSeq(kind === 'S' ? 'seq-orders' : 'seq-bookings');
+  return kind === 'S' ? `DEMO-ORD-${String(n).padStart(4, '0')}` : `DEMO-BOOK-${String(n).padStart(4, '0')}`;
 }
 
 /* ---------- tiny safe storage (localStorage with in-memory fallback) ---------- */
@@ -54,13 +63,20 @@ function sSet(key: string, value: string): void {
     mem.set(key, value);
   }
 }
+function sDel(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    mem.delete(key);
+  }
+}
 function readKey<T>(key: string, seed: () => T): T {
   const raw = sGet(key);
   if (raw) {
     try {
       return JSON.parse(raw) as T;
     } catch {
-      /* corrupted => reseed */
+      /* corrupted => reseed below, never crash */
     }
   }
   const v = seed();
@@ -70,15 +86,11 @@ function readKey<T>(key: string, seed: () => T): T {
 function writeKey(key: string, value: unknown): void {
   sSet(key, JSON.stringify(value));
 }
+/** Restore the initial sample dataset (also used by the demo reset UI). */
 export function clearDemoStorage(): void {
-  for (const k of Object.keys(demoSeeds)) {
-    const full = `aggad-demo:${k}`;
-    try {
-      localStorage.removeItem(full);
-    } catch {
-      mem.delete(full);
-    }
-  }
+  for (const k of Object.keys(demoSeeds)) sDel(`aggad-demo:${k}`);
+  sDel('aggad-demo:seq-orders');
+  sDel('aggad-demo:seq-bookings');
 }
 
 /* ----------fixtures: obviously fictional persons, SAMPLE-tagged ---------- */
@@ -91,6 +103,7 @@ export interface DemoBooking {
   customer_phone: string;
   start_date: string;
   end_date: string;
+  slot?: string;
   rental_fee_minor: number;
   currency: string;
   status: string;
@@ -122,29 +135,75 @@ export interface DemoCustomer {
 export interface DemoDress extends Dress {
   demoSample: true;
 }
+export interface DemoPromo {
+  code: string;
+  percent: number;
+  expires: string | null;
+  demoSample: true;
+}
 
 const today = new Date().toISOString().slice(0, 10);
 
+/** Mirrors the production blocking rule so the simulation teaches real behavior. */
+export const DEMO_BLOCKING_STATUSES = ['confirmed', 'ready_for_pickup', 'checked_out', 'inspection', 'cleaning'];
+
+export const DEMO_STATUS_LABELS: Record<BookingStatus, { ar: string; en: string }> = {
+  pending_review: { ar: 'طلب تجريبي — قيد المراجعة', en: 'Demo Request — Under Review' },
+  confirmed: { ar: 'مقبول — محاكاة فقط', en: 'Approved — Simulation Only' },
+  ready_for_pickup: { ar: 'جاهز للاستلام — محاكاة فقط', en: 'Ready for Pickup — Simulation Only' },
+  checked_out: { ar: 'مستلم — محاكاة فقط', en: 'Checked Out — Simulation Only' },
+  returned: { ar: 'تم الإرجاع — محاكاة فقط', en: 'Returned — Simulation Only' },
+  inspection: { ar: 'فحص — محاكاة فقط', en: 'Inspection — Simulation Only' },
+  cleaning: { ar: 'تنظيف — محاكاة فقط', en: 'Cleaning — Simulation Only' },
+  completed: { ar: 'مكتمل — محاكاة فقط', en: 'Completed — Simulation Only' },
+  cancelled: { ar: 'ملغي — محاكاة فقط', en: 'Cancelled — Simulation Only' },
+};
+
+/** Fictional appointment slots; availability derived deterministically per date. */
+export const DEMO_SLOT_TIMES = ['10:00', '12:30', '15:00', '17:30'];
+export function isSlotTaken(dateStr: string, time: string): boolean {
+  let h = 0;
+  for (const c of `${dateStr}|${time}`) h = (h * 31 + c.charCodeAt(0)) % 997;
+  return h % 3 === 0;
+}
+export function freeSlots(dateStr: string): string[] {
+  return DEMO_SLOT_TIMES.filter((s) => !isSlotTaken(dateStr, s));
+}
+
+function seedUnits(dressId: string, code: string, sizes: string[]): DressUnit[] {
+  return sizes.slice(0, 3).map((s, i) => ({
+    id: `${dressId}-u${i + 1}`,
+    dress_id: dressId,
+    code: `${code}-U${i + 1}`,
+    size_label: s,
+    color_label: null,
+    condition: i === 2 ? 'good' : 'excellent',
+    status: i === 2 ? 'cleaning' : 'available',
+  }));
+}
+
 const demoSeeds: Record<string, () => unknown> = {
   dresses: (): DemoDress[] =>
-    DEMO_DRESSES.map((d) => ({ ...d, demoSample: true as const })),
+    DEMO_DRESSES.map((d) => ({ ...d, demoSample: true as const, units: seedUnits(d.id, d.code, d.sizes) })),
   bookings: (): DemoBooking[] => [
     {
-      id: 'demo-b1', reference: 'DEMO-AG-R-1001', dress_id: 'demo-1', dress_code: 'AG-W-001',
+      id: 'demo-b1', reference: 'DEMO-BOOK-0001', dress_id: 'demo-1', dress_code: 'AG-W-001',
       customer_name: 'Demo Bride — عروسة تجريبية', customer_phone: '+20 100 000 0001',
-      start_date: today, end_date: today, rental_fee_minor: 900000, currency: 'EGP',
+      start_date: today, end_date: today, slot: '12:30',
+      rental_fee_minor: 900000, currency: 'EGP',
       status: 'pending_review', payment_status: 'unpaid', demoSample: true, created_at: new Date().toISOString(),
     },
     {
-      id: 'demo-b2', reference: 'DEMO-AG-R-1002', dress_id: 'demo-2', dress_code: 'AG-E-001',
+      id: 'demo-b2', reference: 'DEMO-BOOK-0002', dress_id: 'demo-2', dress_code: 'AG-E-001',
       customer_name: 'Sample Client — عميلة تجريبية', customer_phone: '+20 100 000 0002',
-      start_date: today, end_date: today, rental_fee_minor: 550000, currency: 'EGP',
+      start_date: today, end_date: today,
+      rental_fee_minor: 550000, currency: 'EGP',
       status: 'confirmed', payment_status: 'partial', demoSample: true, created_at: new Date().toISOString(),
     },
   ],
   orders: (): DemoOrder[] => [
     {
-      id: 'demo-o1', reference: 'DEMO-AG-S-1001',
+      id: 'demo-o1', reference: 'DEMO-ORD-0001',
       customer_name: 'Demo Bride — عروسة تجريبية', customer_phone: '+20 100 000 0001',
       fulfillment_method: 'store_pickup', total_minor: 4500000, currency: 'EGP',
       status: 'pending', payment_status: 'unpaid', fulfillment_status: 'pending',
@@ -159,7 +218,12 @@ const demoSeeds: Record<string, () => unknown> = {
   settings: () => ({
     boutique_name_ar: 'العقاد (تجريبي)', boutique_name_en: 'AL AGGAD (DEMO)',
     whatsapp_number: '201000000000', currency: 'EGP',
+    address_ar: 'عنوان تجريبي — يُحدَّد عند الإطلاق', address_en: 'Demo address — set at launch',
+    hours_ar: 'يومياً 11ص – 9م (تجريبي)', hours_en: 'Daily 11am – 9pm (demo)',
   }),
+  promos: (): DemoPromo[] => [
+    { code: 'DEMO10', percent: 10, expires: null, demoSample: true },
+  ],
   submissions: (): unknown[] => [],
 };
 
@@ -174,6 +238,14 @@ export const demoStore = {
   },
   updateDress(id: string, patch: Partial<DemoDress>): void {
     writeKey('aggad-demo:dresses', demoStore.listDresses().map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  },
+  deleteDress(id: string): void {
+    writeKey('aggad-demo:dresses', demoStore.listDresses().filter((d) => d.id !== id));
+  },
+  updateUnit(dressId: string, unitId: string, patch: Partial<DressUnit>): void {
+    writeKey('aggad-demo:dresses', demoStore.listDresses().map((d) =>
+      d.id === dressId ? { ...d, units: (d.units ?? []).map((u) => (u.id === unitId ? { ...u, ...patch } : u)) } : d,
+    ));
   },
   listBookings(): DemoBooking[] {
     return readKey<DemoBooking[]>('aggad-demo:bookings', demoSeeds.bookings as () => DemoBooking[]);
@@ -202,10 +274,54 @@ export const demoStore = {
   saveSettings(s: Record<string, string>): void {
     writeKey('aggad-demo:settings', s);
   },
+  listPromos(): DemoPromo[] {
+    return readKey<DemoPromo[]>('aggad-demo:promos', demoSeeds.promos as () => DemoPromo[]);
+  },
+  addPromo(p: DemoPromo): void {
+    writeKey('aggad-demo:promos', [...demoStore.listPromos(), p]);
+  },
+  removePromo(code: string): void {
+    writeKey('aggad-demo:promos', demoStore.listPromos().filter((p) => p.code !== code));
+  },
   listSubmissions(): unknown[] {
     return readKey<unknown[]>('aggad-demo:submissions', demoSeeds.submissions as () => unknown[]);
   },
 };
+
+/** Validate a promo code against local demo promos (simulation only). */
+export function validatePromo(code: string): DemoPromo | null {
+  const c = code.trim().toUpperCase();
+  if (!c) return null;
+  const found = demoStore.listPromos().find((p) => p.code.toUpperCase() === c);
+  if (!found) return null;
+  if (found.expires && found.expires < today) return null;
+  return found;
+}
+
+/** Demo conflict check: overlapping blocking-status demo bookings (1-day buffers). */
+export function findDemoConflicts(dressId: string, start: string, end: string, excludeId?: string, buffer = 1): DemoBooking[] {
+  if (!start || !end || start > end) return [];
+  const s = addDaysSafe(start, -buffer);
+  const e = addDaysSafe(end, buffer);
+  return demoStore.listBookings().filter(
+    (b) => b.dress_id === dressId && b.id !== excludeId &&
+      DEMO_BLOCKING_STATUSES.includes(b.status) &&
+      rangesOverlap(s, e, b.start_date, b.end_date),
+  );
+}
+function addDaysSafe(iso: string, days: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+/** Suggest the next free window of the same length, scanning 60 days ahead. */
+export function suggestNextSlot(dressId: string, from: string, lengthDays: number): { start: string; end: string } | null {
+  for (let i = 0; i < 60; i++) {
+    const s = addDaysSafe(from, i);
+    const e = addDaysSafe(s, Math.max(0, lengthDays));
+    if (findDemoConflicts(dressId, s, e).length === 0) return { start: s, end: e };
+  }
+  return null;
+}
 
 /** Persist a visitor demo submission locally, tagged demo:true. */
 export function saveDemoRecord(collection: 'orders' | 'bookings', record: Record<string, unknown>): string {
@@ -230,6 +346,7 @@ export function saveDemoRecord(collection: 'orders' | 'bookings', record: Record
       dress_id: String(record.dress_id ?? ''), dress_code: String(record.dress_code ?? ''),
       customer_name: String(record.customer_name ?? ''), customer_phone: String(record.customer_phone ?? ''),
       start_date: String(record.start_date ?? today), end_date: String(record.end_date ?? today),
+      slot: typeof record.slot === 'string' ? record.slot : undefined,
       rental_fee_minor: Number(record.rental_fee_minor ?? 0), currency: String(record.currency ?? 'EGP'),
       status: 'pending_review', payment_status: 'unpaid',
       demoSample: true, created_at: new Date().toISOString(),

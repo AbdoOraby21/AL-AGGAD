@@ -6,6 +6,7 @@ import { useCart } from '../app/CartContext';
 import { t } from '../lib/i18n';
 import { Logo } from './Logo';
 import { WhatsAppButton } from './WhatsAppButton';
+import { siteConfig } from '../lib/siteConfig';
 
 const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER ?? '201000000000';
 
@@ -58,7 +59,7 @@ export function Header() {
         </div>
         {open && (
           <nav className="md:hidden border-t border-champagne px-4 py-3 flex flex-col gap-1 bg-ivory">
-            {[['/', t(locale, 'home')], ['/catalog?category=wedding', t(locale, 'wedding')], ['/catalog?category=engagement', t(locale, 'engagement')], ['/about', t(locale, 'about')], ['/contact', t(locale, 'contact')], ['/admin', t(locale, 'admin')]].map(([to, label]) => (
+            {[['/', t(locale, 'home')], ['/catalog?category=wedding', t(locale, 'wedding')], ['/catalog?category=engagement', t(locale, 'engagement')], ['/about', t(locale, 'about')], ['/contact', t(locale, 'contact')], ['/faq', t(locale, 'faq_title')], ['/favorites', t(locale, 'fav_title')], ['/admin', t(locale, 'admin')]].map(([to, label]) => (
               <Link key={to + label} to={to} onClick={() => setOpen(false)} className="py-2 border-b border-champagne/50 last:border-0">{label}</Link>
             ))}
           </nav>
@@ -91,13 +92,22 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-ivory/80">
             <li><WhatsAppButton payload={{ to: WA_NUMBER, productName: 'AL AGGAD', productCode: 'GENERAL', intent: 'general', lang: locale }}><span className="underline underline-offset-4">WhatsApp</span></WhatsAppButton></li>
             <li><Link to="/contact">{t(locale, 'contact')}</Link></li>
+            <li><Link to="/faq">{t(locale, 'faq_title')}</Link></li>
             <li><Link to="/about">{t(locale, 'about')}</Link></li>
-            <li><Link to="/policies">{locale === 'ar' ? 'السياسات والشروط' : 'Policies & Terms'}</Link></li>
+            <li><Link to="/policies#rental">{t(locale, 'rental_policy')}</Link></li>
+            <li><Link to="/policies#sale">{t(locale, 'sale_policy')}</Link></li>
+            <li><Link to="/policies#privacy">{t(locale, 'privacy')}</Link></li>
+            <li><Link to="/policies#terms">{t(locale, 'terms')}</Link></li>
           </ul>
         </div>
         <div>
           <h4 className="font-heading text-champagne mb-3">AL AGGAD</h4>
-          <p className="text-sm text-ivory/70" dir="ltr">Instagram · Facebook · TikTok</p>
+          <p className="text-sm text-ivory/70" dir="ltr">
+            <a href={siteConfig.instagram} className="underline underline-offset-4">Instagram</a>
+            {' · '}<a href={siteConfig.facebook} className="underline underline-offset-4">Facebook</a>
+            {' · '}<a href={siteConfig.tiktok} className="underline underline-offset-4">TikTok</a>
+          </p>
+          <p className="text-xs text-ivory/50 mt-2">{locale === 'ar' ? siteConfig.addressAr : siteConfig.addressEn}</p>
         </div>
       </div>
       <div className="border-t border-ivory/15 text-center text-xs py-4 text-ivory/60">

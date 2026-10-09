@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Shirt, CalendarClock, Receipt, Users, Settings as SettingsIcon, LogOut, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Shirt, CalendarClock, Receipt, Users, Settings as SettingsIcon, LogOut, ArrowLeft, BarChart3 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { isDemoMode, resolveAdminAccess } from '../../lib/demo';
 import { useLang } from '../../app/LanguageContext';
@@ -80,6 +80,7 @@ export function AdminShell() {
     ['/admin/bookings', t(locale, 'bookings'), <CalendarClock size={17} key="b" />],
     ['/admin/orders', t(locale, 'orders'), <Receipt size={17} key="o" />],
     ['/admin/customers', t(locale, 'customers'), <Users size={17} key="c" />],
+    ['/admin/reports', t(locale, 'reports'), <BarChart3 size={17} key="r" />],
     ['/admin/settings', t(locale, 'settings'), <SettingsIcon size={17} key="st" />],
   ] as const;
   return (

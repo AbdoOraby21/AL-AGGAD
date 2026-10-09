@@ -66,10 +66,13 @@ The owner-provided reference `arfonts-decotype-thuluth-iii/decotype-thuluth-iii.
 ### Client demo mode
 
 Set `VITE_DEMO_MODE=true` for a safe showcase: sample catalog with SAMPLE badges,
-persistent demo banner, local-only checkout/booking records (`DEMO-AG-…` refs),
-WhatsApp message previews instead of `wa.me` links, and a credential-free demo
-admin dashboard backed by browser storage. Production auth, RLS, and write paths
-are untouched when the flag is off. Full checklist: **`docs/VERCEL_DEMO.md`**.
+persistent demo banner with one-click reset, local-only checkout/booking records
+(`DEMO-ORD-0001` / `DEMO-BOOK-0001`), multi-step rental flow with simulated
+availability calendar and conflict checks, WhatsApp message previews instead of
+`wa.me` links, favorites with comparison, demo promo codes (try `DEMO10`), and a
+credential-free demo admin dashboard (charts, units, promos, CSV reports) backed
+by browser storage. Production auth, RLS, and write paths are untouched when the
+flag is off. Full checklist: **`docs/VERCEL_DEMO.md`**.
 
 ## 7. Operations
 

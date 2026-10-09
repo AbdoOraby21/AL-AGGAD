@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LanguageProvider } from './app/LanguageContext';
 import { CartProvider } from './app/CartContext';
 import { ToastProvider } from './app/ToastContext';
@@ -8,11 +8,13 @@ import { Home } from './pages/Home';
 import { Catalog } from './pages/Catalog';
 import { DressDetails } from './pages/DressDetails';
 import { Cart, Checkout } from './pages/Shop';
-import { About, Contact, Policies, Favorites } from './pages/Static';
+import { About, Contact, Faq, NotFound, Policies } from './pages/Static';
+import { Favorites } from './pages/Favorites';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AdminLogin, AdminShell, RequireAdmin } from './pages/admin/Auth';
 import { AdminOverview } from './pages/admin/Overview';
 import { AdminDresses } from './pages/admin/Dresses';
-import { AdminBookings, AdminOrders, AdminCustomers, AdminSettings } from './pages/admin/Manage';
+import { AdminBookings, AdminOrders, AdminCustomers, AdminSettings, AdminReports } from './pages/admin/Manage';
 import { useToast } from './app/ToastContext';
 
 function Toasts() {
@@ -39,6 +41,7 @@ export default function App() {
               <DemoBanner />
               <Header />
               <div className="flex-1">
+                <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/catalog" element={<Catalog />} />
@@ -47,6 +50,7 @@ export default function App() {
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<Faq />} />
                   <Route path="/policies" element={<Policies />} />
                   <Route path="/favorites" element={<Favorites />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
@@ -56,10 +60,12 @@ export default function App() {
                     <Route path="bookings" element={<AdminBookings />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="customers" element={<AdminCustomers />} />
+                    <Route path="reports" element={<AdminReports />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
+                </ErrorBoundary>
               </div>
               <Footer />
             </div>
