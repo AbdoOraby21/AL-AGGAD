@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ivory: #f8f4ec;
+  --color-champagne: #e8d8bc;
+  --color-champagne-deep: #d9c49c;
+  --color-gold: #b99a5b;
+  --color-gold-deep: #97793f;
+  --color-cocoa: #30251f;
+  --color-stone-soft: #8b8178;
+  --font-arabic: "Tajawal", "Cairo", system-ui, sans-serif;
+  --font-wordmark: "Aref Ruqaa", "Tajawal", serif;
+  --font-heading: "Cormorant Garamond", "Tajawal", serif;
+  --font-body: "Inter", "Tajawal", system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--color-ivory); color: var(--color-cocoa); font-family: var(--font-body); }
+[dir="rtl"] body, [dir="rtl"] { font-family: var(--font-arabic); }
+
+.font-wordmark { font-family: var(--font-wordmark); }
+.font-heading { font-family: var(--font-heading); }
+[dir="rtl"] .font-heading { font-family: var(--font-arabic); }
+
+/* Optional licensed house wordmark. The reference file
+   arfonts-decotype-thuluth-iii/decotype-thuluth-iii.ttf ships with an
+   unclear license (see about_this_font.txt), so it is NOT bundled as a
+   webfont by default. If the owner holds a valid license, place the
+   licensed woff2 at public/fonts/aggad-thuluth.woff2 and uncomment:
+@font-face {
+  font-family: "Aggad Thuluth";
+  src: url("/fonts/aggad-thuluth.woff2") format("woff2");
+  font-display: swap;
+}
+.font-wordmark-licensed { font-family: "Aggad Thuluth", "Aref Ruqaa", serif; }
+*/
+
+.btn-lux { transition: all .25s ease; }
+.card-lux { transition: transform .3s ease, box-shadow .3s ease; }
+.card-lux:hover { transform: translateY(-4px); }
+.img-zoom img { transition: transform .8s cubic-bezier(.2,.6,.2,1); }
+.img-zoom:hover img { transform: scale(1.05); }
+.fade-up { animation: fadeUp .7s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(18px);} to { opacity: 1; transform: none; } }
+:focus-visible { outline: 2px solid #b99a5b; outline-offset: 2px; }

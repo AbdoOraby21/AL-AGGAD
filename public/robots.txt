@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /catalog
+Allow: /dress/
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
