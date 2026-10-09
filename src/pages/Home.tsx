@@ -46,6 +46,7 @@ export function Home() {
           <div className="mt-3 flex gap-3 text-sm">
             <Link to="/catalog?mode=sale" className="text-champagne underline underline-offset-4">{t(locale, 'shop')}</Link>
             <Link to="/catalog?mode=rental" className="text-champagne underline underline-offset-4">{t(locale, 'rent')}</Link>
+            <Link to="/catalog?category=evening" className="text-champagne underline underline-offset-4">{t(locale, 'evening')}</Link>
           </div>
         </div>
       </section>

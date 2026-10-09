@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLang } from '../app/LanguageContext';
 import { t } from '../lib/i18n';
 import { formatMoney } from '../lib/money';
 import { useDresses } from '../app/useDresses';
 import { DressCard, Empty, SectionTitle, SkeletonGrid } from '../components/DressCard';
-import { availableColors, availableSizes, availableStyles, filterDresses, maxCatalogPrice } from '../lib/catalog';
+import { availableColors, availableSizes, availableStyles, categoryCounts, filterDresses, maxCatalogPrice } from '../lib/catalog';
 import { usePageMeta } from '../lib/meta';
 import type { ModeFilter } from '../lib/types';
 
@@ -19,6 +19,7 @@ export function Catalog() {
   const [color, setColor] = useState('');
   const [style, setStyle] = useState('');
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [visible, setVisible] = useState(12);
 
   usePageMeta(t(locale, 'catalog'), locale === 'ar' ? 'تشكيلة فساتين الزفاف والخطوبة — بيع وتأجير' : 'Wedding & engagement dress collection — sale and rental');
 
@@ -32,18 +33,21 @@ export function Catalog() {
   };
   const clearAll = () => {
     setParams({}, { replace: true });
-    setQ(''); setSort('newest'); setSize(''); setColor(''); setStyle(''); setMaxPrice(null);
+    setQ(''); setSort('newest'); setSize(''); setColor(''); setStyle(''); setMaxPrice(null); setVisible(12);
   };
 
   const sizes = useMemo(() => availableSizes(dresses), [dresses]);
   const colors = useMemo(() => availableColors(dresses), [dresses]);
   const styles = useMemo(() => availableStyles(dresses), [dresses]);
   const ceiling = useMemo(() => maxCatalogPrice(dresses), [dresses]);
+  const counts = useMemo(() => categoryCounts(dresses), [dresses]);
 
   const list = useMemo(
     () => filterDresses(dresses, { category, mode, q, sort, maxPriceMinor: maxPrice, size: size || undefined, color: color || undefined, style: style || undefined }),
     [dresses, category, mode, q, sort, maxPrice, size, color, style],
   );
+  const queryKey = `${category}|${mode}|${q}|${sort}|${maxPrice}|${size}|${color}|${style}`;
+  useEffect(() => { setVisible(12); }, [queryKey]);
   const activeCount = [category !== 'all', mode !== 'all', q.trim() !== '', size, color, style, maxPrice != null].filter(Boolean).length;
 
   return (
@@ -58,10 +62,11 @@ export function Catalog() {
             aria-label="search"
           />
           <div className="flex gap-2 flex-wrap">
-            <select value={category} onChange={(e) => set('category', e.target.value)} className="border border-champagne bg-white rounded-full px-4 py-2.5 text-sm" aria-label="category">
-              <option value="all">{locale === 'ar' ? 'كل الفئات' : 'All categories'}</option>
-              <option value="wedding">{t(locale, 'wedding')}</option>
-              <option value="engagement">{t(locale, 'engagement')}</option>
+            <select value={category} onChange={(e) => { set('category', e.target.value); setVisible(12); }} className="border border-champagne bg-white rounded-full px-4 py-2.5 text-sm" aria-label="category">
+              <option value="all">{locale === 'ar' ? 'كل الفئات' : 'All categories'} ({Object.values(counts).reduce((a, b) => a + b, 0)})</option>
+              <option value="wedding">{t(locale, 'wedding')} ({counts.wedding ?? 0})</option>
+              <option value="engagement">{t(locale, 'engagement')} ({counts.engagement ?? 0})</option>
+              <option value="evening">{t(locale, 'evening')} ({counts.evening ?? 0})</option>
             </select>
             <select value={mode} onChange={(e) => set('mode', e.target.value)} className="border border-champagne bg-white rounded-full px-4 py-2.5 text-sm" aria-label="mode">
               <option value="all">{locale === 'ar' ? 'بيع وتأجير' : 'Sale & rental'}</option>
@@ -112,9 +117,18 @@ export function Catalog() {
         </div>
       </div>
       {loading ? <SkeletonGrid /> : list.length === 0 ? <Empty message={t(locale, 'empty_catalog')} /> : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {list.map((d) => <DressCard key={d.id} dress={d} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {list.slice(0, visible).map((d) => <DressCard key={d.id} dress={d} />)}
+          </div>
+          {visible < list.length && (
+            <div className="text-center mt-8">
+              <button onClick={() => setVisible((v) => v + 12)} className="btn-lux border border-cocoa rounded-full px-8 py-3 text-sm hover:bg-cocoa hover:text-ivory">
+                {locale === 'ar' ? `عرض المزيد (${list.length - visible})` : `Load more (${list.length - visible})`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

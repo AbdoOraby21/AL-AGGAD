@@ -9,6 +9,7 @@ import { useCart } from '../app/CartContext';
 import { useToast } from '../app/ToastContext';
 import { RentalFlow } from '../components/RentalFlow';
 import { WhatsAppButton } from '../components/WhatsAppButton';
+import { FALLBACK_DRESS_IMAGE } from '../lib/catalog';
 import { DressCard } from '../components/DressCard';
 
 export function DressDetails() {
@@ -50,7 +51,7 @@ export function DressDetails() {
       <div className="grid md:grid-cols-2 gap-8">
         <div>
           <div className="rounded-3xl overflow-hidden border border-champagne bg-white">
-            <img src={images[Math.min(imgIdx, images.length - 1)].url} alt={dressName(dress, locale)} className="w-full aspect-[3/4] object-cover" />
+            <img src={images[Math.min(imgIdx, images.length - 1)].url} onError={(e) => { e.currentTarget.src = FALLBACK_DRESS_IMAGE; }} alt={dressName(dress, locale)} className="w-full aspect-[3/4] object-cover" />
           </div>
           <div className="mt-3 flex gap-2">
             {images.map((im, i) => (

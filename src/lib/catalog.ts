@@ -56,3 +56,16 @@ export function availableStyles(dresses: Dress[]): string[] {
 export function maxCatalogPrice(dresses: Dress[]): number {
   return dresses.reduce((m, d) => Math.max(m, d.sale_price_minor ?? d.rental_price_minor ?? 0), 0);
 }
+
+/** Graceful image fallback (a verified bridal photo) when a URL fails. */
+export const FALLBACK_DRESS_IMAGE =
+  'https://images.unsplash.com/photo-1594552072238-b8a33785b261?w=900&q=80&auto=format&fit=crop';
+
+export function categoryCounts(dresses: Dress[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const d of dresses) {
+    if (!d.is_active || d.is_sold) continue;
+    counts[d.category_slug] = (counts[d.category_slug] ?? 0) + 1;
+  }
+  return counts;
+}

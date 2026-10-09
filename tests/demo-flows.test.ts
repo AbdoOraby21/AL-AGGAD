@@ -134,10 +134,11 @@ describe('demo admin CRUD stays local', () => {
 
 describe('reset + corrupted storage safety', () => {
   it('reset restores the initial sample dataset', () => {
+    const n0 = demoStore.listDresses().length;
     demoStore.deleteDress(demoStore.listDresses()[0].id);
-    expect(demoStore.listDresses().length).toBe(2);
+    expect(demoStore.listDresses().length).toBe(n0 - 1);
     clearDemoStorage();
-    expect(demoStore.listDresses().length).toBe(3);
+    expect(demoStore.listDresses().length).toBe(n0);
     expect(makeDemoRef('R')).toBe('DEMO-BOOK-0001');
   });
   it('corrupted keys reseed instead of crashing', () => {
@@ -146,7 +147,7 @@ describe('reset + corrupted storage safety', () => {
     expect(Array.isArray(demoStore.listBookings())).toBe(true);
   });
   it('dashboard figures derive from the demo dataset', () => {
-    expect(demoStore.listDresses().length).toBe(3);
+    expect(demoStore.listDresses().length).toBe(DEMO_DRESSES.length);
     expect(demoStore.listBookings().filter((b) => b.status === 'pending_review').length).toBe(1);
     expect(demoStore.listBookings().filter((b) => b.status === 'confirmed').length).toBe(1);
     expect(demoStore.listOrders().length).toBe(1);
@@ -158,5 +159,37 @@ describe('submissions are inert local records', () => {
     const ref = saveDemoRecord('orders', { customer_name: 'X', total_minor: 5 });
     const all = demoStore.listSubmissions() as Array<{ reference: string; demo: boolean }>;
     expect(all.find((s) => s.reference === ref)?.demo).toBe(true);
+  });
+});
+
+describe('expanded catalog integrity (40+ reviewed sample dresses)', () => {
+  const base = { category: 'all', mode: 'all' as const, q: '', sort: 'newest' };
+  it('ships at least 40 dresses with unique ids and codes', () => {
+    expect(DEMO_DRESSES.length).toBeGreaterThanOrEqual(40);
+    expect(new Set(DEMO_DRESSES.map((d) => d.id)).size).toBe(DEMO_DRESSES.length);
+    expect(new Set(DEMO_DRESSES.map((d) => d.code)).size).toBe(DEMO_DRESSES.length);
+  });
+  it('covers wedding, engagement, and evening categories', () => {
+    const cats = new Set(DEMO_DRESSES.map((d) => d.category_slug));
+    expect([...cats].sort()).toEqual(['engagement', 'evening', 'wedding']);
+    expect(filterDresses(DEMO_DRESSES, { ...base, category: 'evening' }).length).toBeGreaterThan(0);
+    expect(filterDresses(DEMO_DRESSES, { ...base, category: 'wedding' }).length).toBeGreaterThanOrEqual(15);
+  });
+  it('gives every dress a unique valid https photo (no repeats)', () => {
+    const urls = DEMO_DRESSES.flatMap((d) => (d.images ?? []).map((i) => i.url));
+    expect(urls.length).toBe(DEMO_DRESSES.length);
+    expect(urls.every((u) => u.startsWith('https://'))).toBe(true);
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+  it('has bilingual names, sizes, and sane pricing on every dress', () => {
+    for (const d of DEMO_DRESSES) {
+      expect(d.name_ar.length).toBeGreaterThan(1);
+      expect(d.name_en.length).toBeGreaterThan(1);
+      expect(d.sizes.length).toBeGreaterThan(0);
+      if (d.sale_enabled) expect(d.sale_price_minor).toBeGreaterThan(0);
+      if (d.rental_enabled) expect(d.rental_price_minor).toBeGreaterThan(0);
+    }
+    expect(DEMO_DRESSES.some((d) => d.is_featured)).toBe(true);
+    expect(DEMO_DRESSES.some((d) => d.is_new)).toBe(true);
   });
 });

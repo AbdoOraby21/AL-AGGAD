@@ -30,6 +30,7 @@ export function Header() {
             <NavLink to="/" className={linkCls}>{t(locale, 'home')}</NavLink>
             <NavLink to="/catalog?category=wedding" className={linkCls}>{t(locale, 'wedding')}</NavLink>
             <NavLink to="/catalog?category=engagement" className={linkCls}>{t(locale, 'engagement')}</NavLink>
+            <NavLink to="/catalog?category=evening" className={linkCls}>{t(locale, 'evening')}</NavLink>
             <NavLink to="/about" className={linkCls}>{t(locale, 'about')}</NavLink>
             <NavLink to="/contact" className={linkCls}>{t(locale, 'contact')}</NavLink>
           </nav>
@@ -59,7 +60,7 @@ export function Header() {
         </div>
         {open && (
           <nav className="md:hidden border-t border-champagne px-4 py-3 flex flex-col gap-1 bg-ivory">
-            {[['/', t(locale, 'home')], ['/catalog?category=wedding', t(locale, 'wedding')], ['/catalog?category=engagement', t(locale, 'engagement')], ['/about', t(locale, 'about')], ['/contact', t(locale, 'contact')], ['/faq', t(locale, 'faq_title')], ['/favorites', t(locale, 'fav_title')], ['/admin', t(locale, 'admin')]].map(([to, label]) => (
+            {[['/', t(locale, 'home')], ['/catalog?category=wedding', t(locale, 'wedding')], ['/catalog?category=engagement', t(locale, 'engagement')], ['/catalog?category=evening', t(locale, 'evening')], ['/about', t(locale, 'about')], ['/contact', t(locale, 'contact')], ['/faq', t(locale, 'faq_title')], ['/favorites', t(locale, 'fav_title')], ['/admin', t(locale, 'admin')]].map(([to, label]) => (
               <Link key={to + label} to={to} onClick={() => setOpen(false)} className="py-2 border-b border-champagne/50 last:border-0">{label}</Link>
             ))}
           </nav>
@@ -83,6 +84,7 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-ivory/80">
             <li><Link to="/catalog?category=wedding">{t(locale, 'wedding')}</Link></li>
             <li><Link to="/catalog?category=engagement">{t(locale, 'engagement')}</Link></li>
+            <li><Link to="/catalog?category=evening">{t(locale, 'evening')}</Link></li>
             <li><Link to="/catalog?mode=rental">{t(locale, 'rent')}</Link></li>
             <li><Link to="/catalog?mode=sale">{t(locale, 'shop')}</Link></li>
           </ul>

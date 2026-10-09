@@ -14,7 +14,7 @@ const schema = z.object({
   code: z.string().min(3),
   name_ar: z.string().min(2),
   name_en: z.string().min(2),
-  category_slug: z.enum(['wedding', 'engagement']),
+  category_slug: z.enum(['wedding', 'engagement', 'evening']),
   sale_enabled: z.boolean().default(true),
   sale_price: z.string().optional(),
   rental_enabled: z.boolean().default(true),
@@ -127,7 +127,7 @@ export function AdminDresses() {
         <label className="text-sm" dir="ltr">Code*<input {...register('code')} placeholder="AG-W-010" className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" /></label>
         <label className="text-sm">الاسم (عربي)*<input {...register('name_ar')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" /></label>
         <label className="text-sm" dir="ltr">Name (EN)*<input {...register('name_en')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2" /></label>
-        <label className="text-sm">الفئة<select {...register('category_slug')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2"><option value="wedding">wedding</option><option value="engagement">engagement</option></select></label>
+        <label className="text-sm">الفئة<select {...register('category_slug')} className="mt-1 w-full border border-champagne rounded-xl px-3 py-2"><option value="wedding">wedding</option><option value="engagement">engagement</option><option value="evening">evening</option></select></label>
         <label className="text-sm flex items-center gap-2"><input type="checkbox" {...register('sale_enabled')} defaultChecked /> {locale === 'ar' ? 'بيع' : 'Sale'}<input {...register('sale_price')} placeholder="45000" dir="ltr" className="w-full border border-champagne rounded-xl px-3 py-2" /></label>
         <label className="text-sm flex items-center gap-2"><input type="checkbox" {...register('rental_enabled')} defaultChecked /> {locale === 'ar' ? 'تأجير' : 'Rental'}<input {...register('rental_price')} placeholder="9000" dir="ltr" className="w-full border border-champagne rounded-xl px-3 py-2" /></label>
         <div className="sm:col-span-3"><button className="bg-cocoa text-ivory rounded-full px-6 py-2.5 text-sm">{locale === 'ar' ? 'إنشاء فستان' : 'Create dress'}</button></div>
